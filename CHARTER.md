@@ -10,6 +10,22 @@ The team charter is dynamic following the conda governance policy, with the foll
 
 - ♻️ The team will abstract code shared between the various installers in the ecosystem in a central location to reduce diverging implementations.
 
+## Areas of work
+
+- Adopt various installer automation from Anaconda and the conda community to centralize maintenance
+
+- Review overlap with the existing miniforge repo upon together with miniforge maintainers
+
+- Apply sensible measures to prevent uncoordinated changes, e.g. branch protection, required code review by at least two maintainers via CODEOWNERS or 4, 6 or 8 eyes review principle
+
+- Add reusable “composite GitHub Action” (like conda’s CLA action) to installer directory with parameters for main config variables, e.g. signing keys, to conda installer repo for use by 1st and 3rd parties
+
+- Make use of created action in:
+  - A new repo called conda/miniconda (?) that automates the build of miniconda (for handover to Anaconda/community QA)
+  - A new Anaconda-internal (!) repo that automates the creation of the Anaconda Distribution Installer in a similar way
+  
+- ...
+
 ## Members
 
 ### conda & constructor maintainers
@@ -25,6 +41,7 @@ The team charter is dynamic following the conda governance policy, with the foll
 - @isuruf (also constructor maintainer)
 
 ### Anaconda packaging
+
 - @AndrewVallette
 - @marcoesters
 - @psteyer
@@ -42,3 +59,4 @@ The team charter is dynamic following the conda governance policy, with the foll
 ### Anaconda custom services
 
 - @jlstevens
+
