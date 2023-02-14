@@ -23,7 +23,13 @@ The team charter is dynamic following the conda governance policy, with the foll
 - Make use of created action in:
   - A new repo called conda/miniconda (?) that automates the build of miniconda (for handover to Anaconda/community QA)
   - A new Anaconda-internal (!) repo that automates the creation of the Anaconda Distribution Installer in a similar way
-  
+
+- Design decisions on how installer creation should split off between the various stakeholders involved
+
+- Supply chain security topics such as reproduciabilty and code signing
+
+- Opportunities of tying together various “bundling” tools under a new `conda bundle` subcommand?
+
 - ...
 
 ## Members
