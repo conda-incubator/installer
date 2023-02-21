@@ -26,7 +26,7 @@ The team charter is dynamic following the conda governance policy, with the foll
 
 - Design decisions on how installer creation should split off between the various stakeholders involved
 
-- Supply chain security topics such as reproduciabilty and code signing
+- Supply chain security topics such as reproducibilty and code signing
 
 - Opportunities of tying together various “bundling” tools under a new `conda bundle` subcommand?
 
