@@ -14,7 +14,7 @@ The team charter is dynamic following the conda governance policy, with the foll
 
 - Adopt various installer automation from Anaconda and the conda community to centralize maintenance
 
-- Review overlap with the existing miniforge repo upon together with miniforge maintainers
+- Review overlap with the existing miniforge repo together with miniforge maintainers
 
 - Apply sensible measures to prevent uncoordinated changes, e.g. branch protection, required code review by at least two maintainers via CODEOWNERS or 4, 6 or 8 eyes review principle
 
