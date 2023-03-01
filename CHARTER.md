@@ -43,7 +43,6 @@ The team charter is dynamic following the conda governance policy, with the foll
 ### miniforge maintainers
 
 - @xhochy
-- @hmaarrfk
 - @isuruf (also constructor maintainer)
 
 ### Anaconda packaging
