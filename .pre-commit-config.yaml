@@ -5,7 +5,7 @@
 #   pre-commit autoupdate
 repos:
     - repo: https://github.com/pre-commit/pre-commit-hooks
-      rev: v4.5.0
+      rev: v4.6.0
       hooks:
           - id: check-added-large-files
           - id: check-ast
@@ -46,7 +46,7 @@ repos:
       hooks:
           - id: shellcheck
     - repo: https://github.com/python-jsonschema/check-jsonschema
-      rev: 0.28.0
+      rev: 0.28.1
       hooks:
           # verify github syntaxes
           - id: check-github-actions
