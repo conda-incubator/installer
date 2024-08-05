@@ -25,16 +25,16 @@ repos:
       hooks:
           - id: isort
     - repo: https://github.com/psf/black
-      rev: 24.4.2
+      rev: 24.8.0
       hooks:
           - id: black
     - repo: https://github.com/asottile/pyupgrade
-      rev: v3.16.0
+      rev: v3.17.0
       hooks:
           - id: pyupgrade
             args: [--py37-plus, --keep-runtime-typing]
     - repo: https://github.com/pycqa/flake8
-      rev: 7.1.0
+      rev: 7.1.1
       hooks:
           - id: flake8
     - repo: https://github.com/lovesegfault/beautysh
@@ -46,7 +46,7 @@ repos:
       hooks:
           - id: shellcheck
     - repo: https://github.com/python-jsonschema/check-jsonschema
-      rev: 0.29.0
+      rev: 0.29.1
       hooks:
           # verify github syntaxes
           - id: check-github-actions
