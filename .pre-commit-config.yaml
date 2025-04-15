@@ -1,57 +1,57 @@
----
 # Apply to all files without commiting:
 #   pre-commit run --all-files
 # Update this file:
 #   pre-commit autoupdate
 repos:
-    - repo: https://github.com/pre-commit/pre-commit-hooks
-      rev: v5.0.0
-      hooks:
-          - id: check-added-large-files
-          - id: check-ast
-          - id: fix-byte-order-marker
-          - id: check-case-conflict
-          - id: check-executables-have-shebangs
-          - id: check-merge-conflict
-          - id: check-shebang-scripts-are-executable
-          - id: check-yaml
-          - id: debug-statements
-          - id: detect-private-key
-          - id: end-of-file-fixer
-          - id: mixed-line-ending
-          - id: trailing-whitespace
-    - repo: https://github.com/PyCQA/isort
-      rev: 6.0.1
-      hooks:
-          - id: isort
-    - repo: https://github.com/psf/black
-      rev: 25.1.0
-      hooks:
-          - id: black
-    - repo: https://github.com/asottile/pyupgrade
-      rev: v3.19.1
-      hooks:
-          - id: pyupgrade
-            args: [--py37-plus, --keep-runtime-typing]
-    - repo: https://github.com/pycqa/flake8
-      rev: 7.2.0
-      hooks:
-          - id: flake8
-    - repo: https://github.com/lovesegfault/beautysh
-      rev: v6.2.1
-      hooks:
-          - id: beautysh
-    - repo: https://github.com/shellcheck-py/shellcheck-py
-      rev: v0.10.0.1
-      hooks:
-          - id: shellcheck
-    - repo: https://github.com/python-jsonschema/check-jsonschema
-      rev: 0.33.0
-      hooks:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-ast
+      - id: fix-byte-order-marker
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
+      - id: check-yaml
+      - id: debug-statements
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+  - repo: https://github.com/PyCQA/isort
+    rev: 6.0.1
+    hooks:
+      - id: isort
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.19.1
+    hooks:
+      - id: pyupgrade
+        args: [--py37-plus, --keep-runtime-typing]
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.2.0
+    hooks:
+      - id: flake8
+  - repo: https://github.com/lovesegfault/beautysh
+    rev: v6.2.1
+    hooks:
+      - id: beautysh
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.33.0
+    hooks:
           # verify github syntaxes
-          - id: check-github-actions
-          - id: check-github-workflows
-    - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
-      rev: 0.2.3
-      hooks:
-          - id: yamlfmt
+      - id: check-github-actions
+      - id: check-github-workflows
+  - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
+    rev: 0.2.3
+    hooks:
+      - id: yamlfmt
+        args: [--mapping, '2', --offset, '2', --sequence, '4', --implicit_start]
