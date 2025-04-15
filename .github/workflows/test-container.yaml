@@ -1,0 +1,119 @@
+name: Test container
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - tests
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  build-installer:
+    name: Container builds (${{ matrix.artifact-suffix }})
+    runs-on: ubuntu-latest
+    env:
+      MICROMAMBA_VERSION: 2.0.8
+      MICROMAMBA_BUILD: 0
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - container-image: continuumio/miniconda3
+            container-architecture: linux/aarch64
+            artifact-suffix: miniconda-aarch64
+          - container-image: continuumio/miniconda3
+            artifact-suffix: miniconda-x86_64
+          - container-image: condaforge/linux-anvil-aarch64
+            container-architecture: linux/aarch64
+            target-platform: linux-aarch64
+            artifact-suffix: miniforge-aarch64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683       # v4.2.2
+
+      - name: Download micromamba
+        id: download-micromamba
+        if: startswith(matrix.container-image, 'condaforge/')
+        env:
+          TARGET_PLATFORM: ${{ matrix.target-platform }}
+        run: |
+          # Use a custom script since setup-micromamba does not support
+          # cross-platform downloads.
+          MICROMAMBA_DIR="${{ runner.temp }}/micromamba"
+          MICROMAMBA_BIN="${MICROMAMBA_DIR}/micromamba"
+          VERSION="${MICROMAMBA_VERSION}-${MICROMAMBA_BUILD}"
+          MICROMAMBA_URL="https://github.com/mamba-org/micromamba-releases/releases/download/${VERSION}/micromamba-${TARGET_PLATFORM}"
+          mkdir -p "${MICROMAMBA_DIR}"
+          curl -L -o "${MICROMAMBA_BIN}" "${MICROMAMBA_URL}"
+          chmod 755 "${MICROMAMBA_BIN}"
+          echo "micromamba-path=${MICROMAMBA_BIN}" >> ${GITHUB_OUTPUT}
+        shell: bash
+
+      - name: Create installer
+        id: create-installer
+        uses: ./
+        with:
+          environment-yaml-string: |
+            channels:
+              - ${{ startswith(matrix.container-image, 'condaforge/') && 'conda-forge' || 'defaults' }}
+            dependencies:
+              - constructor
+            variables:
+              ${{ startswith(matrix.container-image, 'condaforge/') && 'CONDA_OVERRIDE_GLIBC: 2.17' || '' }}
+          container-arch: ${{ matrix.container-architecture }}
+          container-image: ${{ matrix.container-image }}
+          standalone-location: ${{ steps.download-micromamba.outputs.micromamba-path }}
+          recipe-directory: ${{ startswith(matrix.container-image, 'condaforge/') && 'recipes/micromamba' || 'recipes/defaults' }}
+
+      - name: Upload installer to Github artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02       # v4.6.2
+        with:
+          path: ${{ steps.create-installer.outputs.artifacts-directory }}/*
+          name: container-test-${{ matrix.artifact-suffix }}
+          retention-days: 5
+
+      - name: Determine installer file name
+        id: installer-file
+        run: |
+          INSTALLER_FILE=$(find "${{ steps.create-installer.outputs.artifacts-directory }}" -name "*.sh" | head -n 1)
+          echo "installer-file=${INSTALLER_FILE}" >> ${GITHUB_OUTPUT}
+        shell: bash
+
+      - name: Verify hashes
+        env:
+          ARTIFACTS_DIRECTORY: ${{ steps.create-installer.outputs.artifacts-directory }}
+          INSTALLER_FILE: ${{ steps.installer-file.outputs.installer-file }}
+        run: |
+          cd ${ARTIFACTS_DIRECTORY}
+          sha256sum -c "${INSTALLER_FILE}.sha256"
+        shell: bash
+
+      - name: Create test container
+        id: test-container
+        env:
+          ARTIFACTS_DIRECTORY: ${{ steps.create-installer.outputs.artifacts-directory }}
+        run: |
+          docker run -d --rm -ti --name installer-test\
+            -v "${ARTIFACTS_DIRECTORY}:${ARTIFACTS_DIRECTORY}"\
+            -v "${{ runner.temp }}":"${{ runner.temp }}"\
+            ${{ startswith(matrix.container-image, 'condaforge') && '-e MICROMAMBA_VERSION' || '' }}\
+            ${{ matrix.container-architecture && format('--platform {0}', matrix.container-architecture) || '' }}\
+            debian:latest
+            /bin/bash
+        shell: bash
+
+      - name: Test installer
+        run: |
+          export INSTALL_DIR="${HOME}/testinstall"
+          INSTALLER_FILE="${{ steps.installer-file.outputs.installer-file }}"
+          bash "${INSTALLER_FILE}" -b -p "${INSTALL_DIR}"
+          . ${INSTALL_DIR}/etc/profile.d/conda.sh
+          conda activate
+          conda info --json | python -c "import json, os, sys; from pathlib import Path; info = json.loads(sys.stdin.read()); assert Path(os.environ.get('INSTALL_DIR', '')) == Path(info['root_prefix'])"
+          ${{ startswith(matrix.container-image, 'condaforge') && 'test "$(${INSTALL_DIR}/_conda --version)" == "${MICROMAMBA_VERSION}"' || '' }}
+        shell: docker exec -i installer-test /bin/bash -eo pipefail {0}
