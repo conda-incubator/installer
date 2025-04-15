@@ -14,6 +14,7 @@ repos:
       - id: check-merge-conflict
       - id: check-shebang-scripts-are-executable
       - id: check-yaml
+        exclude: construct\.yaml
       - id: debug-statements
       - id: detect-private-key
       - id: end-of-file-fixer
@@ -54,4 +55,5 @@ repos:
     rev: 0.2.3
     hooks:
       - id: yamlfmt
+        exclude: construct\.yaml
         args: [--mapping, '2', --offset, '2', --sequence, '4', --implicit_start]

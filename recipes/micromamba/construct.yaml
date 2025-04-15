@@ -1,0 +1,14 @@
+{% set installer_type = os.environ.get("EXT", "sh") %}
+
+name: TestInstallerMicromamba
+version: 0.0.1
+installer_type: {{ installer_type }}
+write_condarc: True
+channels:
+  - conda-forge
+specs:
+  - conda
+  - mamba
+build_outputs:
+  - hash:
+      algorithm: sha256
