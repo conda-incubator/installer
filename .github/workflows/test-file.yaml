@@ -2,6 +2,10 @@ name: Test from environment.yaml file
 
 on:
   pull_request:
+    paths:
+      - action.yaml
+      - recipes/defaults/*
+      - .github/workflows/test-file.yaml
   push:
     branches:
       - main

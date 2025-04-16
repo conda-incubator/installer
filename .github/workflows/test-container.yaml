@@ -2,6 +2,10 @@ name: Test container builds
 
 on:
   pull_request:
+    paths:
+      - action.yaml
+      - recipes/**
+      - .github/workflows/test-container.yaml
   push:
     branches:
       - main

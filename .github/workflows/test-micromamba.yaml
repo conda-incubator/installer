@@ -2,6 +2,10 @@ name: Test Micromamba
 
 on:
   pull_request:
+    paths:
+      - action.yaml
+      - recipes/micromamba/*
+      - .github/workflows/test-micromamba.yaml
   push:
     branches:
       - main

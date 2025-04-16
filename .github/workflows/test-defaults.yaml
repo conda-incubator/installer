@@ -2,6 +2,10 @@ name: Test defaults
 
 on:
   pull_request:
+    paths:
+      - action.yaml
+      - recipes/defaults/construct.yaml
+      - .github/workflows/test-defaults.yaml
   push:
     branches:
       - main

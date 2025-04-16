@@ -2,6 +2,10 @@ name: Test signing installers
 
 on:
   pull_request:
+    paths:
+      - action.yaml
+      - recipes/defaults/construct.yaml
+      - .github/workflows/test-signing.yaml
   push:
     branches:
       - main
