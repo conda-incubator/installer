@@ -1,0 +1,35 @@
+name: Test errors
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  no-conda:
+    name: No conda or mamba binary
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683       # v4.2.2
+
+      - name: Run action
+        uses: ./
+        id: run-action
+        with:
+          container-image: debian:latest  # Does not contain conda or mamba
+          environment-yaml-file: recipes/defaults/environment.yaml
+          recipe-directory: recipes/defaults
+        continue-on-error: true
+
+      - name: Error if successful
+        if: ${{ steps.run-action.outcome == 'success' }}
+        run: |
+          echo "::error::The build action succeeded unexpectedly."
+          exit 1
+        shell: bash

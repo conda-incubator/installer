@@ -151,7 +151,7 @@ runs:
         elif [[ -n "${STANDALONE_EXE}" ]]; then
             CONDA_BIN="${STANDALONE_EXE}"
         else
-            echo "Could not find conda or mamba binary."
+            echo "::error::Could not find conda or mamba binary."
             exit 1
         fi
 
