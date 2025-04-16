@@ -1,11 +1,10 @@
-name: Test container
+name: Test container builds
 
 on:
   pull_request:
   push:
     branches:
       - main
-      - tests
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
