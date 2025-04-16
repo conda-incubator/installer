@@ -30,7 +30,7 @@ inputs:
     description: The location of the standalone binary executable.
     required: false
 
-    # secrets needed by constructor
+  # secrets needed by constructor
   azure-signtool-key-vault-client-id:
     description: Client ID of the Azure key vault.
     required: false
@@ -58,6 +58,14 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Validate input
+      run: |
+        if [[ -z "${{ inputs.environment-yaml-file }}" ]] && [[ -z "${{ inputs.environment-yaml-string }}" ]]; then
+          echo "::error::\`environment-yaml-file\` or \`environment-yaml-string\` must be set."
+          exit 1
+        fi
+      shell: bash
+
     - name: Set up workspace
       id: workspace
       run: |

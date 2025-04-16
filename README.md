@@ -140,6 +140,7 @@ For a full list of supported secrets, see the [`action.yaml`](action.yaml) file.
 | [![Test from environment.yaml file][ex-file-badge]][ex-file] |
 | [![Test Micromamba][ex-micromamba-badge]][ex-micromamba]     |
 | [![Test signing installers][ex-signing-badge]][ex-signing]   |
+| [![Test expected failures][ex-failures-badge]][ex-failures]  |
 
 [ex-container]:
   https://github.com/conda-incubator/installer/actions/workflows/test-container.yaml
@@ -149,6 +150,10 @@ For a full list of supported secrets, see the [`action.yaml`](action.yaml) file.
   https://github.com/conda-incubator/installer/actions/workflows/test-defaults.yaml
 [ex-defaults-badge]:
   https://github.com/conda-incubator/installer/actions/workflows/test-defaults.yaml/badge.svg?branch=main
+[ex-failure]:
+  https://github.com/conda-incubator/installer/actions/workflows/test-failure.yaml
+[ex-failure-badge]:
+  https://github.com/conda-incubator/installer/actions/workflows/test-failure.yaml/badge.svg?branch=main
 [ex-file]:
   https://github.com/conda-incubator/installer/actions/workflows/test-file.yaml
 [ex-file-badge]:
