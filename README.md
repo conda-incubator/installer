@@ -169,8 +169,6 @@ For a full list of supported secrets, see the [`action.yaml`](action.yaml) file.
 
 ## Team charter
 
-The conda team to work on tools, techniques and documentation about conda installers such as miniconda, miniforge etc.
-
 The team charter is dynamic following the conda governance policy, with the following caveats:
 
 - 🧰 The team’s purpose is to develop and maintain code included in the conda/installer repository. That repository contains among other things tools and scripts to make it incredibly easy to create and maintain installers similar to the current “miniconda” or “miniforge” installers.
