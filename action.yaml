@@ -146,7 +146,7 @@ runs:
         if [[ "${UNAME}" == MINGW* ]] && [[ -n "${CONDA_ROOT}" ]]; then
           CONDA_ROOT=$(cygpath "${CONDA}")
         fi
-        RECIPE_DIR="${{ inputs.recipe-directory }}"
+        RECIPE_DIR="${GITHUB_WORKSPACE}/${{ inputs.recipe-directory }}"
         STANDALONE_EXE="${{ inputs.standalone-location }}"
 
         if [[ -d "${CONDA_ROOT}" ]]; then
