@@ -165,7 +165,6 @@ runs:
 
         PREFIX="${CONSTRUCTOR_WORKSPACE}/constructor"
         ${CONDA_BIN} env create -p "${PREFIX}" --file "${ENVIRONMENT_YAML}" -y
-        . "${PREFIX}/etc/profile.d/conda.sh" && conda activate
         echo "::endgroup::"
 
         echo "::group::Construct the installer"
@@ -175,9 +174,10 @@ runs:
         if [[ -n "${STANDALONE_EXE}" ]]; then
             EXTRA_CONSTRUCTOR_ARGS+=" --conda-exe ${STANDALONE_EXE}"
         fi
-        constructor "${RECIPE_DIR}"\
-          --output-dir "${ARTIFACTS_DIRECTORY}"\
-          ${EXTRA_CONSTRUCTOR_ARGS}
+        ${CONDA_BIN} run -p "${PREFIX}" \
+          constructor "${RECIPE_DIR}"\
+            --output-dir "${ARTIFACTS_DIRECTORY}"\
+            ${EXTRA_CONSTRUCTOR_ARGS}
         # Remove the constructor-generated tmp directory
         rm -rf "${ARTIFACTS_DIRECTORY}/tmp"
         echo "::endgroup::"
