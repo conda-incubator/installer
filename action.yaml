@@ -136,7 +136,7 @@ runs:
         CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD: ${{ inputs.constructor-pfx-certificate_password }}
       run: |
         echo "::group::Create environment"
-        # Define variables here instead of in an enviorn
+        # Define variables here instead of in an enviornment to simplify Docker command
         CONSTRUCTOR_WORKSPACE="${{ steps.workspace.outputs.constructor-workspace }}"
         OUTPUTS_FILE="${{ steps.workspace.outputs.outputs-file }}"
         ENVIRONMENT_YAML="${{ inputs.environment-yaml-file || steps.environment-str.outputs.environment-yaml-file }}"
