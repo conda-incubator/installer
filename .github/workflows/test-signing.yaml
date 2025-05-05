@@ -76,7 +76,7 @@ jobs:
               EXT: exe
               NSIS_USING_LOG_BUILD: 1
           conda-root: ${{ env.CONDA }}
-          recipe-directory: recipes/defaults
+          input-directory: recipes/defaults
           constructor-pfx-certificate-password: ${{ steps.setup-signing.outputs.cert-password }}
 
       - name: Upload installer to Github artifact

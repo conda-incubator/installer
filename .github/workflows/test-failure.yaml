@@ -24,7 +24,7 @@ jobs:
         uses: ./
         id: run-action
         with:
-          recipe-directory: recipes/defaults
+          input-directory: recipes/defaults
         continue-on-error: true
 
       - name: Error if successful
@@ -47,7 +47,7 @@ jobs:
         with:
           container-image: debian:latest  # Does not contain conda or mamba
           environment-yaml-file: recipes/defaults/environment.yaml
-          recipe-directory: recipes/defaults
+          input-directory: recipes/defaults
         continue-on-error: true
 
       - name: Error if successful

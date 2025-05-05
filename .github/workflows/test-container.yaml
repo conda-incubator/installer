@@ -71,7 +71,7 @@ jobs:
           container-arch: ${{ matrix.container-architecture }}
           container-image: ${{ matrix.container-image }}
           standalone-location: ${{ steps.download-micromamba.outputs.micromamba-path }}
-          recipe-directory: ${{ startswith(matrix.container-image, 'condaforge/') && 'recipes/micromamba' || 'recipes/defaults' }}
+          input-directory: ${{ startswith(matrix.container-image, 'condaforge/') && 'recipes/micromamba' || 'recipes/defaults' }}
 
       - name: Upload installer to Github artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02       # v4.6.2

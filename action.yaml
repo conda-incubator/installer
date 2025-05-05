@@ -1,5 +1,5 @@
 name: Create installer
-description: Build the installer from a recipe directory.
+description: Build the installer from an input directory.
 
 inputs:
   conda-root:
@@ -23,8 +23,8 @@ inputs:
       build environment. Can be used to include logic and expressions from the calling workflow.
       The file must not have the `name` property.
     required: false
-  recipe-directory:
-    description: The directory containing the recipe file.
+  input-directory:
+    description: The directory containing the construct.yaml file.
     required: true
   standalone-location:
     description: The location of the standalone binary executable.
@@ -105,8 +105,8 @@ runs:
       id: container
       run: |
         # To run the build action inside a container, three locations need to be mounted:
-        #   * The GitHub workspace to access the recipe.
-        #     Mount the entire workspace directory instead of the recipe directory in case
+        #   * The GitHub workspace to access the input directory.
+        #     Mount the entire workspace directory instead of just the input directory in case
         #     construct.yaml refers to resources outside the directory.
         #   * The temp directory so that the container can execute the build script.
         #   * The workspace of the installer build for the output files of constructor.
@@ -146,7 +146,7 @@ runs:
         if [[ "${UNAME}" == MINGW* ]] && [[ -n "${CONDA_ROOT}" ]]; then
           CONDA_ROOT=$(cygpath "${CONDA}")
         fi
-        RECIPE_DIR="${GITHUB_WORKSPACE}/${{ inputs.recipe-directory }}"
+        INPUT_DIR="${GITHUB_WORKSPACE}/${{ inputs.input-directory }}"
         STANDALONE_EXE="${{ inputs.standalone-location }}"
 
         if [[ -d "${CONDA_ROOT}" ]]; then
@@ -175,7 +175,7 @@ runs:
             EXTRA_CONSTRUCTOR_ARGS+=" --conda-exe ${STANDALONE_EXE}"
         fi
         ${CONDA_BIN} run -p "${PREFIX}" \
-          constructor "${RECIPE_DIR}"\
+          constructor "${INPUT_DIR}"\
             --output-dir "${ARTIFACTS_DIRECTORY}"\
             ${EXTRA_CONSTRUCTOR_ARGS}
         # Remove the constructor-generated tmp directory

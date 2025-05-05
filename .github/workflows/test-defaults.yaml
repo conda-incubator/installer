@@ -47,7 +47,7 @@ jobs:
               EXT: ${{ matrix.os == 'windows' && 'exe' || 'sh' }}
               NSIS_USING_LOG_BUILD: 1
           conda-root: ${{ env.CONDA }}
-          recipe-directory: recipes/defaults
+          input-directory: recipes/defaults
 
       - name: Upload installer to Github artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02       # v4.6.2
