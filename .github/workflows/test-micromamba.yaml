@@ -88,7 +88,7 @@ jobs:
         run: |
           . ${CONDA}/etc/profile.d/conda.sh
           conda activate
-          conda info --json | python -c "import json, os, sys; from pathlib import Path; info = json.loads(sys.stdin.read()); assert Path(os.environ.get('INSTALL_DIR', '')) == Path(info['root_prefix'])"
+          conda info --json | python -c "import json, os, sys; from pathlib import Path; info = json.loads(sys.stdin.read()); assert Path(os.environ.get('INSTALL_DIR', '')).samefile(info['root_prefix'])"
           conda config --show --json | python -c "import sys, json; info = json.loads(sys.stdin.read()); assert 'conda-forge' in info['channels']"
           test "$(${CONDA}/_conda --version)" == "${MICROMAMBA_VERSION}"
         shell: bash

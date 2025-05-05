@@ -72,7 +72,7 @@ jobs:
         run: |
           . ${CONDA}/etc/profile.d/conda.sh
           conda activate
-          conda info --json | python -c "import json, os, sys; from pathlib import Path; info = json.loads(sys.stdin.read()); assert Path(os.environ.get('INSTALL_DIR', '')) == Path(info['root_prefix'])"
+          conda info --json | python -c "import json, os, sys; from pathlib import Path; info = json.loads(sys.stdin.read()); assert Path(os.environ.get('INSTALL_DIR', '')).samefile(info['root_prefix'])"
           if [[ $(uname) == MINGW* ]]; then
               test -f "${CONDA}/install.log"
           fi

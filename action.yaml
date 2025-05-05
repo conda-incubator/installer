@@ -14,7 +14,7 @@ inputs:
   environment-yaml-file:
     description: |
       Path to the environment.yaml file used to create the build environment.
-      Takes precedence over envrionemnt-yaml-string.
+      Takes precedence over environment-yaml-string.
       The file must not have the `name` property.
     required: false
   environment-yaml-string:
@@ -136,7 +136,7 @@ runs:
         CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD: ${{ inputs.constructor-pfx-certificate_password }}
       run: |
         echo "::group::Create environment"
-        # Define variables here instead of in an enviornment to simplify Docker command
+        # Define variables here instead of in an environment to simplify Docker command
         CONSTRUCTOR_WORKSPACE="${{ steps.workspace.outputs.constructor-workspace }}"
         OUTPUTS_FILE="${{ steps.workspace.outputs.outputs-file }}"
         ENVIRONMENT_YAML="${{ inputs.environment-yaml-file || steps.environment-str.outputs.environment-yaml-file }}"
