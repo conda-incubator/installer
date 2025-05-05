@@ -97,7 +97,7 @@ runs:
       uses: docker/setup-qemu-action@53851d14592bedcffcf25ea515637cff71ef929a     # v3.3.0
       with:
         # https://github.com/docker/setup-qemu-action/issues/188#issuecomment-2604322104
-        image: tonistiigi/binfmt:qemu-v8.1.5
+        image: tonistiigi/binfmt:qemu-v8.1.5@sha256:2d2918e86e5327d0661f7083d67a95280b0f7be8f77ed79a8418f81d7d90ce6f
         platforms: ${{ inputs.container-arch }}
 
     - name: Create container command
