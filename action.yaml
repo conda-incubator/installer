@@ -15,13 +15,16 @@ inputs:
     description: |
       Path to the environment.yaml file used to create the build environment.
       Takes precedence over environment-yaml-string.
-      The file must not have the `name` property.
     required: false
   environment-yaml-string:
+    default: |
+      channels:
+        - conda-forge
+      dependencies:
+        - constructor
     description: |
       Multi-line string containing the contents of the environment.yaml file used to create the
       build environment. Can be used to include logic and expressions from the calling workflow.
-      The file must not have the `name` property.
     required: false
   input-directory:
     description: The directory containing the construct.yaml file.
@@ -58,14 +61,6 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Validate input
-      run: |
-        if [[ -z "${{ inputs.environment-yaml-file }}" ]] && [[ -z "${{ inputs.environment-yaml-string }}" ]]; then
-          echo "::error::\`environment-yaml-file\` or \`environment-yaml-string\` must be set."
-          exit 1
-        fi
-      shell: bash
-
     - name: Set up workspace
       id: workspace
       run: |
