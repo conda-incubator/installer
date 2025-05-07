@@ -61,6 +61,31 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Validate input
+      env:
+        CONDA_ROOT: ${{ inputs.conda-root }}
+        ENVIRONMENT_YAML_FILE: ${{ inputs.environment-yaml-file }}
+        INPUT_DIRECTORY: ${{ inputs.input-directory }}
+        STANDALONE_LOCATION: ${{ inputs.standalone-location }}
+      run: |
+        if [[ -n "${CONDA_ROOT}" ]] && [[ ! -d "${CONDA_ROOT}" ]]; then
+            echo "::error::Directory ${CONDA_ROOT} does not exist."
+            exit 1
+        fi
+        if [[ -n "${ENVIRONMENT_YAML_FILE}" ]] && [[ ! -f "${ENVIRONMENT_YAML_FILE}" ]]; then
+            echo "::error::File ${ENVIRONMENT_YAML_FILE} does not exist."
+            exit 1
+        fi
+        if [[ -n "${INPUT_DIRECTORY}" ]] && [[ ! -d "${INPUT_DIRECTORY}" ]]; then
+            echo "::error::Directory ${INPUT_DIRECTORY} does not exist."
+            exit 1
+        fi
+        if [[ -n "${STANDALONE_LOCATION}" ]] && [[ ! -f "${STANDALONE_LOCATION}" ]]; then
+            echo "::error::File ${STANDALONE_LOCATION} does not exist."
+            exit 1
+        fi
+      shell: bash
+
     - name: Set up workspace
       id: workspace
       run: |
@@ -81,8 +106,8 @@ runs:
       if: ${{ !inputs.environment-yaml-file }}
       id: environment-str
       env:
-        ENVIRONMENT_YAML_STRING: ${{ inputs.environment-yaml-string }}
         ENVIRONMENT_FILE: ${{ steps.workspace.outputs.constructor-workspace }}/environment.yaml
+        ENVIRONMENT_YAML_STRING: ${{ inputs.environment-yaml-string }}
       run: |
         echo "${ENVIRONMENT_YAML_STRING}" > "${ENVIRONMENT_FILE}"
         echo "environment-yaml-file=${ENVIRONMENT_FILE}" >> ${GITHUB_OUTPUT}
