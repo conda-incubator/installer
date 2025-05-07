@@ -90,7 +90,7 @@ runs:
       id: workspace
       run: |
         UNAME="$(uname)"
-        CONSTRUCTOR_WORKSPACE="${{ runner.temp }}/_constructor_workdir"
+        CONSTRUCTOR_WORKSPACE="${RUNNER_TEMP}/_constructor_workdir"
         if [[ "${UNAME}" == MINGW* ]]; then
             CONSTRUCTOR_WORKSPACE=$(cygpath "${CONSTRUCTOR_WORKSPACE}")
         fi
