@@ -49,8 +49,10 @@ jobs:
 
       - name: Determine installer file name
         id: installer-file
+        env:
+          ARTIFACTS_DIRECTORY: ${{ steps.create-installer.outputs.artifacts-directory }}
         run: |
-          INSTALLER_FILE=$(find "${{ steps.create-installer.outputs.artifacts-directory }}" -name "*.sh" | head -n 1)
+          INSTALLER_FILE=$(find "${ARTIFACTS_DIRECTORY}" -name "*.sh" | head -n 1)
           echo "installer-file=${INSTALLER_FILE}" >> ${GITHUB_OUTPUT}
         shell: bash
 

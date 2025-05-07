@@ -62,8 +62,10 @@ jobs:
 
       - name: Determine installer file name
         id: installer-file
+        env:
+          ARTIFACTS_DIRECTORY: ${{ steps.create-installer.outputs.artifacts-directory }}
         run: |
-          SHAFILE=$(find "${{ steps.create-installer.outputs.artifacts-directory }}" -name "*.sha256" | head -n 1)
+          SHAFILE=$(find "${ARTIFACTS_DIRECTORY}" -name "*.sha256" | head -n 1)
           echo "installer-file=${SHAFILE/\.sha256/}" >> ${GITHUB_OUTPUT}
         shell: bash
 

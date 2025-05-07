@@ -92,22 +92,20 @@ jobs:
 
       - name: Determine installer file name
         id: installer-file
+        env:
+          ARTIFACTS_DIRECTORY: ${{ steps.create-installer.outputs.artifacts-directory }}
         run: |
-          INSTALLER_FILE=$(find "${{ steps.create-installer.outputs.artifacts-directory }}" -name "*.exe" | head -n 1)
-          echo "installer-file=${INSTALLER_FILE}" >> ${GITHUB_OUTPUT}
-        shell: bash
+          $INSTALLER_FILE=$(Get-ChildItem -Path "${env:ARTIFACTS_DIRECTORY}" -Filter "*.exe")[0].FullName
+          echo "installer-file=${INSTALLER_FILE}" >> ${env:GITHUB_OUTPUT}
+        shell: pwsh
 
       - name: Verify hashes
         env:
           ARTIFACTS_DIRECTORY: ${{ steps.create-installer.outputs.artifacts-directory }}
           INSTALLER_FILE: ${{ steps.installer-file.outputs.installer-file }}
         run: |
-          UNAME=$(uname)
           ARTIFACTS_DIRECTORY=$(cygpath "${ARTIFACTS_DIRECTORY}")
           cd ${ARTIFACTS_DIRECTORY}
-          if [[ $(uname) == MINGW* ]]; then
-              sed -i 's/\r//' "${INSTALLER_FILE}.sha256"
-          fi
           sha256sum -c "${INSTALLER_FILE}.sha256"
         shell: bash
 

@@ -81,9 +81,10 @@ runs:
       if: ${{ !inputs.environment-yaml-file }}
       id: environment-str
       env:
+        ENVIRONMENT_YAML_STRING: ${{ inputs.environment-yaml-string }}
         ENVIRONMENT_FILE: ${{ steps.workspace.outputs.constructor-workspace }}/environment.yaml
       run: |
-        echo "${{ inputs.environment-yaml-string }}" > "${ENVIRONMENT_FILE}"
+        echo "${ENVIRONMENT_YAML_STRING}" > "${ENVIRONMENT_FILE}"
         echo "environment-yaml-file=${ENVIRONMENT_FILE}" >> ${GITHUB_OUTPUT}
       shell: bash
 
@@ -98,7 +99,18 @@ runs:
     - name: Create container command
       if: ${{ inputs.container-image }}
       id: container
+      env:
+        CONSTRUCTOR_WORKSPACE: ${{ steps.workspace.outputs.constructor-workspace }}
+        CONTAINER_ARCH: ${{ inputs.container-arch }}
+        CONTAINER_IMAGE: ${{ inputs.container-image }}
+        STANDALONE_LOCATION: ${{ inputs.standalone-location }}
       run: |
+        if [[ -n "${STANDALONE_LOCATION}" ]]; then
+            STANDALONE_MOUNT_ARG="-v $(dirname "${STANDALONE_LOCATION}"):$(dirname "${STANDALONE_LOCATION}")"
+        fi
+        if [[ -n "${CONTAINER_ARCH}" ]]; then
+            PLATFORM_ARG="--platform ${CONTAINER_ARCH}"
+        fi
         # To run the build action inside a container, three locations need to be mounted:
         #   * The GitHub workspace to access the input directory.
         #     Mount the entire workspace directory instead of just the input directory in case
@@ -108,13 +120,13 @@ runs:
         #   * The directory of the standalone binary, if needed.
         DOCKER_CMD=(
             docker run --rm
-            -v "${{ github.workspace }}:${{  github.workspace }}"
-            -v "${{ runner.temp }}:${{ runner.temp }}"
-            -v "${{ steps.workspace.outputs.constructor-workspace }}:${{ steps.workspace.outputs.constructor-workspace }}"
-            ${{ inputs.standalone-location && format('-v $(dirname {0}):$(dirname {0})', inputs.standalone-location) || '' }}
-            ${{ inputs.container-arch && format('--platform {0}', inputs.container-arch) || '' }}
+            -v "${GITHUB_WORKSPACE}:${GITHUB_WORKSPACE}"
+            -v "${RUNNER_TEMP}:${RUNNER_TEMP}"
+            -v "${CONSTRUCTOR_WORKSPACE}:${CONSTRUCTOR_WORKSPACE}"
+            ${STANDALONE_MOUNT_ARG}
+            ${PLATFORM_ARG}
             -e GITHUB_WORKSPACE
-            ${{ inputs.container-image }}
+            ${CONTAINER_IMAGE}
             /bin/bash -eo pipefail {0}
         )
         echo "container-command=${DOCKER_CMD[@]}" >> ${GITHUB_OUTPUT}

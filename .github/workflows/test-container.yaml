@@ -86,8 +86,10 @@ jobs:
 
       - name: Determine installer file name
         id: installer-file
+        env:
+          ARTIFACTS_DIRECTORY: ${{ steps.create-installer.outputs.artifacts-directory }}
         run: |
-          INSTALLER_FILE=$(find "${{ steps.create-installer.outputs.artifacts-directory }}" -name "*.sh" | head -n 1)
+          INSTALLER_FILE=$(find "${ARTIFACTS_DIRECTORY}" -name "*.sh" | head -n 1)
           echo "installer-file=${INSTALLER_FILE}" >> ${GITHUB_OUTPUT}
         shell: bash
 
@@ -104,20 +106,20 @@ jobs:
         id: test-container
         env:
           ARTIFACTS_DIRECTORY: ${{ steps.create-installer.outputs.artifacts-directory }}
+          INSTALLER_FILE: ${{ steps.installer-file.outputs.installer-file }}
         run: |
           docker run -d --rm -ti --name installer-test\
             -v "${ARTIFACTS_DIRECTORY}:${ARTIFACTS_DIRECTORY}"\
-            -v "${{ runner.temp }}":"${{ runner.temp }}"\
-            ${{ startswith(matrix.container-image, 'condaforge') && '-e MICROMAMBA_VERSION' || '' }}\
+            -v "${RUNNER_TEMP}":"${RUNNER_TEMP}"\
             ${{ matrix.container-architecture && format('--platform {0}', matrix.container-architecture) || '' }}\
+            ${{ startswith(matrix.container-image, 'condaforge') && '-e MICROMAMBA_VERSION' || '' }}\
+            -e INSTALLER_FILE\
             debian:latest
-            /bin/bash
         shell: bash
 
       - name: Test installer
         run: |
           export INSTALL_DIR="${HOME}/testinstall"
-          INSTALLER_FILE="${{ steps.installer-file.outputs.installer-file }}"
           bash "${INSTALLER_FILE}" -b -p "${INSTALL_DIR}"
           . ${INSTALL_DIR}/etc/profile.d/conda.sh
           conda activate
