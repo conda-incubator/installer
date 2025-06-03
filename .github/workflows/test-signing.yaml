@@ -1,0 +1,120 @@
+name: Test signing installers
+
+on:
+  pull_request:
+    paths:
+      - action.yaml
+      - recipes/defaults/construct.yaml
+      - .github/workflows/test-signing.yaml
+  push:
+    branches:
+      - main
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  build-installer:
+    name: Signing installers
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683       # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Set up signing
+        run: |
+          $signtool=(
+              Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -ErrorAction SilentlyContinue |
+                  Where-Object {$_.Name -eq "signtool.exe" -and $_.Directory.Name -eq "${{ runner.arch }}".ToLower() } |
+                  Sort-Object -Descending |
+                  Select-Object -First 1
+          )
+          if (!($signtool)) {
+              WriteError "Could not find signtool.exe on runner." -ErrorAction Stop
+          }
+          "signtool-path=${signtool.FullName}" | Out-File "${env:GITHUB_OUTPUT}" -Append
+
+          $certPassword=Get-Random
+          $certPath=
+          $certSplat = @{
+              DnsName = 'installers@conda.io'
+              Type = 'CodeSigning'
+              NotAfter = (Get-Date).AddDays(14)
+              CertStoreLocation = 'cert:\CurrentUser\My'
+          }
+          $pfxSplat = @{
+              Cert = New-SelfSignedCertificate @certSplat
+              FilePath = $certPath
+              Password = ConvertTo-SecureString -String "$certPassword" -Force -AsPlainText
+          }
+          Export-PfxCertificate @pfxSplat
+
+          "cert-path=${certPath}" | Out-File "${env:GITHUB_OUTPUT}" -Append
+          "cert-password=${certPassword}" | Out-File "${env:GITHUB_OUTPUT}" -Append
+        shell: pwsh
+
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@505e6394dae86d6a5c7fbb6e3fb8938e3e863830       # v3.1.1
+        with:
+          activate-environment: ''
+          run-post: false
+
+      - name: Create installer
+        id: create-installer
+        uses: ./
+        with:
+          environment-yaml-string: |
+            channels:
+              - defaults
+            dependencies:
+              - constructor
+              - nsis=*=*_log_*
+            variables:
+              CERTIFICATE_PATH: ${{ steps.setup-signing.outputs.cert-path }}
+              CONSTRUCTOR_SIGNTOOL_PATH: ${{ steps.setup-signing.outputs.signtool-path }}
+              EXT: exe
+              NSIS_USING_LOG_BUILD: 1
+          conda-root: ${{ env.CONDA }}
+          input-directory: recipes/defaults
+          constructor-pfx-certificate-password: ${{ steps.setup-signing.outputs.cert-password }}
+
+      - name: Upload installer to Github artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02       # v4.6.2
+        with:
+          path: ${{ steps.create-installer.outputs.artifacts-directory }}/*
+          name: signing-test
+          retention-days: 5
+
+      - name: Determine installer file name
+        id: installer-file
+        env:
+          ARTIFACTS_DIRECTORY: ${{ steps.create-installer.outputs.artifacts-directory }}
+        run: |
+          $INSTALLER_FILE=$(Get-ChildItem -Path "${env:ARTIFACTS_DIRECTORY}" -Filter "*.exe")[0].FullName
+          echo "installer-file=${INSTALLER_FILE}" >> ${env:GITHUB_OUTPUT}
+        shell: pwsh
+
+      - name: Verify hashes
+        env:
+          ARTIFACTS_DIRECTORY: ${{ steps.create-installer.outputs.artifacts-directory }}
+          INSTALLER_FILE: ${{ steps.installer-file.outputs.installer-file }}
+        run: |
+          ARTIFACTS_DIRECTORY=$(cygpath "${ARTIFACTS_DIRECTORY}")
+          cd ${ARTIFACTS_DIRECTORY}
+          sha256sum -c "${INSTALLER_FILE}.sha256"
+        shell: bash
+
+      - name: Verify signature
+        env:
+          INSTALLER_FILE: ${{ steps.installer-file.outputs.installer-file }}
+        run: |
+          $sig=(Get-AuthenticodeSignature -LiteralPath "${env:INSTALLER_FILE}")
+          if ($sig.SignerCertificate.Thumbprint -eq "") {
+              Write-Error "Installer not signed." -ErrorAction Stop
+          }
+        shell: pwsh

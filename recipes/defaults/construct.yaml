@@ -1,0 +1,17 @@
+{% set installer_type = os.environ.get("EXT", "sh") %}
+{% set certificate_path = os.environ.get("CERTIFICATE_PATH", "") %}
+
+name: TestInstallerDefaults
+version: 0.0.1
+installer_type: {{ installer_type }}
+write_condarc: true
+{% if certificate_path %}
+signing_certificate: {{ certificate_path }}
+{% endif %}
+channels:
+  - http://repo.anaconda.com/pkgs/main/
+specs:
+  - conda
+build_outputs:
+  - hash:
+      algorithm: sha256
