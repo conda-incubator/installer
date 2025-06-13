@@ -9,7 +9,7 @@ inputs:
     description: The architecture of the Docker image if different from the host.
     required: false
   container-image:
-    description: The Docker image used to build the installer.
+    description: The container image used to build the installer.
     required: false
   environment-yaml-file:
     description: |
@@ -88,6 +88,8 @@ runs:
 
     - name: Set up workspace
       id: workspace
+      env:
+        CONTAINER_IMAGE: ${{ inputs.container-image }}
       run: |
         UNAME="$(uname)"
         CONSTRUCTOR_WORKSPACE="${RUNNER_TEMP}/_constructor_workdir"
@@ -95,7 +97,17 @@ runs:
             CONSTRUCTOR_WORKSPACE=$(cygpath "${CONSTRUCTOR_WORKSPACE}")
         fi
         mkdir -p "${CONSTRUCTOR_WORKSPACE}"
-        chmod 777 "${CONSTRUCTOR_WORKSPACE}"
+        if [[ -n "${CONTAINER_IMAGE}" ]]; then
+          DEFAULT_PERMISSIONS=$(
+            stat -c "%a" "${CONSTRUCTOR_WORKSPACE}" 2>/dev/null \
+            || stat -f "%A" "${CONSTRUCTOR_WORKSPACE}" 2>/dev/null
+          )
+          # Make directory permissions permissive so that all users in the container
+          # can write to the workspace directory. Permissions will be reset after
+          # artifact creation.
+          chmod 777 "${CONSTRUCTOR_WORKSPACE}"
+          echo "default-mkdir-permissions=${DEFAULT_PERMISSIONS}" >> ${GITHUB_OUTPUT}
+        fi
         echo "constructor-workspace=${CONSTRUCTOR_WORKSPACE}" >> ${GITHUB_OUTPUT}
         # To avoid permission issues with GITHUB_OUTPUTS inside Docker images,
         # create an outputs file that can be dumped into the output in a separate step.
@@ -232,4 +244,17 @@ runs:
       env:
         OUTPUTS_FILE: ${{ steps.workspace.outputs.outputs-file }}
       run: cat "${OUTPUTS_FILE}" >> ${GITHUB_OUTPUT}
+      shell: bash
+
+    - name: Fix permissions and ownership for files created with a container
+      if: ${{ inputs.container-image }}
+      env:
+        CONSTRUCTOR_WORKSPACE: ${{ steps.workspace.outputs.constructor-workspace }}
+        DEFAULT_PERMISSIONS: ${{ steps.workspace.outputs.default-mkdir-permissions }}
+      run: |
+        chmod ${DEFAULT_PERMISSIONS} "${CONSTRUCTOR_WORKSPACE}"
+        SUDO=$(sudo -n true 2>/dev/null && printf %s sudo)
+        if ! ${SUDO} chown -R $(id -u):$(id -g) "${CONSTRUCTOR_WORKSPACE}"; then
+          echo "WARNING: could not change owner of artifact files."
+        fi
       shell: bash
