@@ -247,14 +247,16 @@ runs:
       shell: bash
 
     - name: Fix permissions and ownership for files created with a container
-      if: ${{ inputs.container-image }}
+      if: ${{ inputs.container-image && always() }}
       env:
         CONSTRUCTOR_WORKSPACE: ${{ steps.workspace.outputs.constructor-workspace }}
         DEFAULT_PERMISSIONS: ${{ steps.workspace.outputs.default-mkdir-permissions }}
       run: |
-        chmod ${DEFAULT_PERMISSIONS} "${CONSTRUCTOR_WORKSPACE}"
-        SUDO=$(sudo -n true 2>/dev/null && printf %s sudo)
-        if ! ${SUDO} chown -R $(id -u):$(id -g) "${CONSTRUCTOR_WORKSPACE}"; then
-          echo "WARNING: could not change owner of artifact files."
+        if [[ -d "${CONSTRUCTOR_WORKSPACE}" ]]; then
+          chmod ${DEFAULT_PERMISSIONS} "${CONSTRUCTOR_WORKSPACE}"
+          SUDO=$(sudo -n true 2>/dev/null && printf %s sudo)
+          if ! ${SUDO} chown -R $(id -u):$(id -g) "${CONSTRUCTOR_WORKSPACE}"; then
+            echo "WARNING: could not change owner of artifact files."
+          fi
         fi
       shell: bash
