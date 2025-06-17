@@ -1,0 +1,262 @@
+name: Create installer
+description: Build the installer from an input directory.
+
+inputs:
+  conda-root:
+    description: Location to a pre-installed conda/mamba installation.
+    required: false
+  container-arch:
+    description: The architecture of the Docker image if different from the host.
+    required: false
+  container-image:
+    description: The container image used to build the installer.
+    required: false
+  environment-yaml-file:
+    description: |
+      Path to the environment.yaml file used to create the build environment.
+      Takes precedence over environment-yaml-string.
+    required: false
+  environment-yaml-string:
+    default: |
+      channels:
+        - conda-forge
+      dependencies:
+        - constructor
+    description: |
+      Multi-line string containing the contents of the environment.yaml file used to create the
+      build environment. Can be used to include logic and expressions from the calling workflow.
+    required: false
+  input-directory:
+    description: The directory containing the construct.yaml file.
+    required: true
+  standalone-location:
+    description: The location of the standalone binary executable.
+    required: false
+
+  # secrets needed by constructor
+  azure-signtool-key-vault-client-id:
+    description: Client ID of the Azure key vault.
+    required: false
+  azure-signtool-key-vault-certificate:
+    description: Certificate of the Azure key vault.
+    required: false
+  azure-signtool-key-vault-secret:
+    description: Secret for the Azure key vault.
+    required: false
+  azure-signtool-key-vault-tenant-id:
+    description: Tenant ID of the Azure key vault.
+    required: false
+  azure-signtool-key-vault-url:
+    description: URL to for the Azure key vault.
+    required: false
+  constructor-pfx-certificate-password:
+    description: Windows signing password.
+    required: false
+
+outputs:
+  artifacts-directory:
+    description: Directory containing the artifacts of the constructor run.
+    value: ${{ steps.outputs.outputs.artifacts-directory }}
+
+runs:
+  using: composite
+  steps:
+    - name: Validate input
+      env:
+        CONDA_ROOT: ${{ inputs.conda-root }}
+        ENVIRONMENT_YAML_FILE: ${{ inputs.environment-yaml-file }}
+        INPUT_DIRECTORY: ${{ inputs.input-directory }}
+        STANDALONE_LOCATION: ${{ inputs.standalone-location }}
+      run: |
+        if [[ -n "${CONDA_ROOT}" ]] && [[ ! -d "${CONDA_ROOT}" ]]; then
+            echo "::error::Directory ${CONDA_ROOT} does not exist."
+            exit 1
+        fi
+        if [[ -n "${ENVIRONMENT_YAML_FILE}" ]] && [[ ! -f "${ENVIRONMENT_YAML_FILE}" ]]; then
+            echo "::error::File ${ENVIRONMENT_YAML_FILE} does not exist."
+            exit 1
+        fi
+        if [[ -n "${INPUT_DIRECTORY}" ]] && [[ ! -d "${INPUT_DIRECTORY}" ]]; then
+            echo "::error::Directory ${INPUT_DIRECTORY} does not exist."
+            exit 1
+        fi
+        if [[ -n "${STANDALONE_LOCATION}" ]] && [[ ! -f "${STANDALONE_LOCATION}" ]]; then
+            echo "::error::File ${STANDALONE_LOCATION} does not exist."
+            exit 1
+        fi
+      shell: bash
+
+    - name: Set up workspace
+      id: workspace
+      env:
+        CONTAINER_IMAGE: ${{ inputs.container-image }}
+      run: |
+        UNAME="$(uname)"
+        CONSTRUCTOR_WORKSPACE="${RUNNER_TEMP}/_constructor_workdir"
+        if [[ "${UNAME}" == MINGW* ]]; then
+            CONSTRUCTOR_WORKSPACE=$(cygpath "${CONSTRUCTOR_WORKSPACE}")
+        fi
+        mkdir -p "${CONSTRUCTOR_WORKSPACE}"
+        if [[ -n "${CONTAINER_IMAGE}" ]]; then
+          DEFAULT_PERMISSIONS=$(
+            stat -c "%a" "${CONSTRUCTOR_WORKSPACE}" 2>/dev/null \
+            || stat -f "%A" "${CONSTRUCTOR_WORKSPACE}" 2>/dev/null
+          )
+          # Make directory permissions permissive so that all users in the container
+          # can write to the workspace directory. Permissions will be reset after
+          # artifact creation.
+          chmod 777 "${CONSTRUCTOR_WORKSPACE}"
+          echo "default-mkdir-permissions=${DEFAULT_PERMISSIONS}" >> ${GITHUB_OUTPUT}
+        fi
+        echo "constructor-workspace=${CONSTRUCTOR_WORKSPACE}" >> ${GITHUB_OUTPUT}
+        # To avoid permission issues with GITHUB_OUTPUTS inside Docker images,
+        # create an outputs file that can be dumped into the output in a separate step.
+        echo "outputs-file=${CONSTRUCTOR_WORKSPACE}/outputs.txt" >> ${GITHUB_OUTPUT}
+      shell: bash
+
+    - name: Create environment.yaml file
+      if: ${{ !inputs.environment-yaml-file }}
+      id: environment-str
+      env:
+        ENVIRONMENT_FILE: ${{ steps.workspace.outputs.constructor-workspace }}/environment.yaml
+        ENVIRONMENT_YAML_STRING: ${{ inputs.environment-yaml-string }}
+      run: |
+        echo "${ENVIRONMENT_YAML_STRING}" > "${ENVIRONMENT_FILE}"
+        echo "environment-yaml-file=${ENVIRONMENT_FILE}" >> ${GITHUB_OUTPUT}
+      shell: bash
+
+    - name: Set up QEMU
+      if: ${{ inputs.container-image && inputs.container-arch }}
+      uses: docker/setup-qemu-action@53851d14592bedcffcf25ea515637cff71ef929a     # v3.3.0
+      with:
+        image: tonistiigi/binfmt:qemu-v9.2.2@sha256:1b804311fe87047a4c96d38b4b3ef6f62fca8cd125265917a9e3dc3c996c39e6
+        platforms: ${{ inputs.container-arch }}
+
+    - name: Create container command
+      if: ${{ inputs.container-image }}
+      id: container
+      env:
+        CONSTRUCTOR_WORKSPACE: ${{ steps.workspace.outputs.constructor-workspace }}
+        CONTAINER_ARCH: ${{ inputs.container-arch }}
+        CONTAINER_IMAGE: ${{ inputs.container-image }}
+        STANDALONE_LOCATION: ${{ inputs.standalone-location }}
+      run: |
+        if [[ -n "${STANDALONE_LOCATION}" ]]; then
+            STANDALONE_MOUNT_ARG="-v $(dirname "${STANDALONE_LOCATION}"):$(dirname "${STANDALONE_LOCATION}")"
+        fi
+        if [[ -n "${CONTAINER_ARCH}" ]]; then
+            PLATFORM_ARG="--platform ${CONTAINER_ARCH}"
+        fi
+        # To run the build action inside a container, three locations need to be mounted:
+        #   * The GitHub workspace to access the input directory.
+        #     Mount the entire workspace directory instead of just the input directory in case
+        #     construct.yaml refers to resources outside the directory.
+        #   * The temp directory so that the container can execute the build script.
+        #   * The workspace of the installer build for the output files of constructor.
+        #   * The directory of the standalone binary, if needed.
+        DOCKER_CMD=(
+            docker run --rm
+            -v "${GITHUB_WORKSPACE}:${GITHUB_WORKSPACE}"
+            -v "${RUNNER_TEMP}:${RUNNER_TEMP}"
+            -v "${CONSTRUCTOR_WORKSPACE}:${CONSTRUCTOR_WORKSPACE}"
+            ${STANDALONE_MOUNT_ARG}
+            ${PLATFORM_ARG}
+            -e GITHUB_WORKSPACE
+            ${CONTAINER_IMAGE}
+            /bin/bash -eo pipefail {0}
+        )
+        echo "container-command=${DOCKER_CMD[@]}" >> ${GITHUB_OUTPUT}
+      shell: bash
+
+    - name: Build installer
+      id: build
+      env:
+        AZURE_SIGNTOOL_KEY_VAULT_CLIENT_ID: ${{ inputs.azure-signtool-key-vault-client-id }}
+        AZURE_SIGNTOOL_KEY_VAULT_CERTIFICATE: ${{ inputs.azure-signtool-key-vault-certificate }}
+        AZURE_SIGNTOOL_KEY_VAULT_SECRET: ${{ inputs.azure-signtool-key-vault-secret }}
+        AZURE_SIGNTOOL_KEY_VAULT_TENANT_ID: ${{ inputs.azure-signtool-key-vault-tenant-id }}
+        AZURE_SIGNTOOL_KEY_VAULT_URL: ${{ inputs.azure-signtool-key-vault-url }}
+        CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD: ${{ inputs.constructor-pfx-certificate_password }}
+      run: |
+        echo "::group::Create environment"
+        # Define variables here instead of in an environment to simplify Docker command
+        CONSTRUCTOR_WORKSPACE="${{ steps.workspace.outputs.constructor-workspace }}"
+        OUTPUTS_FILE="${{ steps.workspace.outputs.outputs-file }}"
+        ENVIRONMENT_YAML="${{ inputs.environment-yaml-file || steps.environment-str.outputs.environment-yaml-file }}"
+        CONDA_ROOT="${{ inputs.conda-root }}"
+
+        UNAME=$(uname)
+        if [[ "${UNAME}" == MINGW* ]] && [[ -n "${CONDA_ROOT}" ]]; then
+          CONDA_ROOT=$(cygpath "${CONDA}")
+        fi
+        INPUT_DIR="${GITHUB_WORKSPACE}/${{ inputs.input-directory }}"
+        STANDALONE_EXE="${{ inputs.standalone-location }}"
+
+        NO_CAPTURE_OUTPUT_FLAG=""
+        if [[ -d "${CONDA_ROOT}" ]]; then
+            . "${CONDA_ROOT}/etc/profile.d/conda.sh" && conda activate
+        fi
+        if [[ -n "$(command -v conda)" ]]; then
+            CONDA_BIN=conda
+            NO_CAPTURE_OUTPUT_FLAG='--no-capture-output'
+        elif [[ -n "$(command -v mamba)" ]]; then
+            CONDA_BIN=mamba
+            NO_CAPTURE_OUTPUT_FLAG='--attach  ""'
+        elif [[ -n "${STANDALONE_EXE}" ]]; then
+            CONDA_BIN="${STANDALONE_EXE}"
+            if [[ "$("${CONDA_BIN}" --version | cut -d' ' -f1)" == "conda" ]]; then
+                NO_CAPTURE_OUTPUT_FLAG='--no-capture-output'
+            elif [[ -n "$("${CONDA_BIN}" --help | grep mamba)" ]]; then
+                NO_CAPTURE_OUTPUT_FLAG='--attach  ""'
+            fi
+        else
+            echo "::error::Could not find conda or mamba binary."
+            exit 1
+        fi
+
+        PREFIX="${CONSTRUCTOR_WORKSPACE}/constructor"
+        ${CONDA_BIN} env create -p "${PREFIX}" --file "${ENVIRONMENT_YAML}" -y
+        echo "::endgroup::"
+
+        echo "::group::Construct the installer"
+        ARTIFACTS_DIRECTORY="${CONSTRUCTOR_WORKSPACE}/build"
+        mkdir -p "${ARTIFACTS_DIRECTORY}"
+        EXTRA_CONSTRUCTOR_ARGS=""
+        if [[ -n "${STANDALONE_EXE}" ]]; then
+            EXTRA_CONSTRUCTOR_ARGS+=" --conda-exe ${STANDALONE_EXE}"
+        fi
+        ${CONDA_BIN} run $NO_CAPTURE_OUTPUT_FLAG -p "${PREFIX}" \
+          constructor "${INPUT_DIR}"\
+            --output-dir "${ARTIFACTS_DIRECTORY}"\
+            ${EXTRA_CONSTRUCTOR_ARGS}
+        # Remove the constructor-generated tmp directory
+        rm -rf "${ARTIFACTS_DIRECTORY}/tmp"
+        echo "::endgroup::"
+
+        if [[ "${UNAME}" == MINGW* ]]; then
+            ARTIFACTS_DIRECTORY=$(cygpath -w "${ARTIFACTS_DIRECTORY}")
+        fi
+        echo "artifacts-directory=${ARTIFACTS_DIRECTORY}" >> ${OUTPUTS_FILE}
+      shell: ${{ steps.container.outputs.container-command || 'bash -eo pipefail {0}' }}
+
+    - name: Set outputs
+      id: outputs
+      env:
+        OUTPUTS_FILE: ${{ steps.workspace.outputs.outputs-file }}
+      run: cat "${OUTPUTS_FILE}" >> ${GITHUB_OUTPUT}
+      shell: bash
+
+    - name: Fix permissions and ownership for files created with a container
+      if: ${{ inputs.container-image && always() }}
+      env:
+        CONSTRUCTOR_WORKSPACE: ${{ steps.workspace.outputs.constructor-workspace }}
+        DEFAULT_PERMISSIONS: ${{ steps.workspace.outputs.default-mkdir-permissions }}
+      run: |
+        if [[ -d "${CONSTRUCTOR_WORKSPACE}" ]]; then
+          chmod ${DEFAULT_PERMISSIONS} "${CONSTRUCTOR_WORKSPACE}"
+          SUDO=$(sudo -n true 2>/dev/null && printf %s sudo)
+          if ! ${SUDO} chown -R $(id -u):$(id -g) "${CONSTRUCTOR_WORKSPACE}"; then
+            echo "WARNING: could not change owner of artifact files."
+          fi
+        fi
+      shell: bash
