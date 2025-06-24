@@ -150,9 +150,9 @@ For a full list of supported secrets, see the [`action.yaml`](action.yaml) file.
   https://github.com/conda-incubator/installer/actions/workflows/test-defaults.yaml
 [ex-defaults-badge]:
   https://github.com/conda-incubator/installer/actions/workflows/test-defaults.yaml/badge.svg?branch=main
-[ex-failure]:
+[ex-failures]:
   https://github.com/conda-incubator/installer/actions/workflows/test-failure.yaml
-[ex-failure-badge]:
+[ex-failures-badge]:
   https://github.com/conda-incubator/installer/actions/workflows/test-failure.yaml/badge.svg?branch=main
 [ex-file]:
   https://github.com/conda-incubator/installer/actions/workflows/test-file.yaml
