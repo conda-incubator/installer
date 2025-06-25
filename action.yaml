@@ -1,6 +1,10 @@
 name: Create installer
 description: Build the installer from an input directory.
 
+branding:
+  color: green
+  icon: code
+
 inputs:
   conda-root:
     description: Location to a pre-installed conda/mamba installation.
