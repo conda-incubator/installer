@@ -1,5 +1,5 @@
-name: Create installer
-description: Build the installer from an input directory.
+name: Create constructor-based installer
+description: Create installers using constructor
 
 branding:
   color: green
