@@ -216,6 +216,7 @@ runs:
 
         echo "::group::Construct the installer"
         ARTIFACTS_DIRECTORY="${CONSTRUCTOR_WORKSPACE}/build"
+        CACHE_DIRECTORY="${CONSTRUCTOR_WORKSPACE}/constructor_cache"
         mkdir -p "${ARTIFACTS_DIRECTORY}"
         EXTRA_CONSTRUCTOR_ARGS=""
         if [[ -n "${STANDALONE_EXE}" ]]; then
@@ -225,6 +226,7 @@ runs:
         . "${PREFIX}/etc/profile.d/conda.sh" && conda activate
         constructor "${INPUT_DIR}"\
             --output-dir "${ARTIFACTS_DIRECTORY}"\
+            --cache-dir "${CACHE_DIRECTORY}"\
             ${EXTRA_CONSTRUCTOR_ARGS}
         conda deactivate
         # Remove the constructor-generated tmp directory
