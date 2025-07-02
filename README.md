@@ -133,14 +133,15 @@ For a full list of supported secrets, see the [`action.yaml`](action.yaml) file.
 
 ## Build status
 
-| Workflow Status                                              |
-| ------------------------------------------------------------ |
-| [![Test container builds][ex-container-badge]][ex-container] |
-| [![Test defaults][ex-defaults-badge]][ex-defaults]           |
-| [![Test from environment.yaml file][ex-file-badge]][ex-file] |
-| [![Test Micromamba][ex-micromamba-badge]][ex-micromamba]     |
-| [![Test signing installers][ex-signing-badge]][ex-signing]   |
-| [![Test expected failures][ex-failures-badge]][ex-failures]  |
+| Workflow Status                                                            |
+| -------------------------------------------------------------------------- |
+| [![Test container builds][ex-container-badge]][ex-container]               |
+| [![Test defaults][ex-defaults-badge]][ex-defaults]                         |
+| [![Test from environment.yaml file][ex-file-badge]][ex-file]               |
+| [![Test conda-standalone][ex-conda-standalone-badge]][ex-conda-standalone] |
+| [![Test Micromamba][ex-micromamba-badge]][ex-micromamba]                   |
+| [![Test signing installers][ex-signing-badge]][ex-signing]                 |
+| [![Test expected failures][ex-failures-badge]][ex-failures]                |
 
 [ex-container]:
   https://github.com/conda-incubator/installer/actions/workflows/test-container.yaml
@@ -158,6 +159,10 @@ For a full list of supported secrets, see the [`action.yaml`](action.yaml) file.
   https://github.com/conda-incubator/installer/actions/workflows/test-file.yaml
 [ex-file-badge]:
   https://github.com/conda-incubator/installer/actions/workflows/test-file.yaml/badge.svg?branch=main
+[ex-conda-standalone]:
+  https://github.com/conda-incubator/installer/actions/workflows/test-conda-standalone.yaml
+[ex-conda-standalone-badge]:
+  https://github.com/conda-incubator/installer/actions/workflows/test-conda-standalone.yaml/badge.svg?branch=main
 [ex-micromamba]:
   https://github.com/conda-incubator/installer/actions/workflows/test-micromamba.yaml
 [ex-micromamba-badge]:

@@ -196,23 +196,15 @@ runs:
         INPUT_DIR="${GITHUB_WORKSPACE}/${{ inputs.input-directory }}"
         STANDALONE_EXE="${{ inputs.standalone-location }}"
 
-        NO_CAPTURE_OUTPUT_FLAG=""
         if [[ -d "${CONDA_ROOT}" ]]; then
             . "${CONDA_ROOT}/etc/profile.d/conda.sh" && conda activate
         fi
         if [[ -n "$(command -v conda)" ]]; then
             CONDA_BIN=conda
-            NO_CAPTURE_OUTPUT_FLAG='--no-capture-output'
         elif [[ -n "$(command -v mamba)" ]]; then
             CONDA_BIN=mamba
-            NO_CAPTURE_OUTPUT_FLAG='--attach  ""'
         elif [[ -n "${STANDALONE_EXE}" ]]; then
             CONDA_BIN="${STANDALONE_EXE}"
-            if [[ "$("${CONDA_BIN}" --version | cut -d' ' -f1)" == "conda" ]]; then
-                NO_CAPTURE_OUTPUT_FLAG='--no-capture-output'
-            elif [[ -n "$("${CONDA_BIN}" --help | grep mamba)" ]]; then
-                NO_CAPTURE_OUTPUT_FLAG='--attach  ""'
-            fi
         else
             echo "::error::Could not find conda or mamba binary."
             exit 1
@@ -224,15 +216,19 @@ runs:
 
         echo "::group::Construct the installer"
         ARTIFACTS_DIRECTORY="${CONSTRUCTOR_WORKSPACE}/build"
+        CACHE_DIRECTORY="${CONSTRUCTOR_WORKSPACE}/constructor_cache"
         mkdir -p "${ARTIFACTS_DIRECTORY}"
         EXTRA_CONSTRUCTOR_ARGS=""
         if [[ -n "${STANDALONE_EXE}" ]]; then
             EXTRA_CONSTRUCTOR_ARGS+=" --conda-exe ${STANDALONE_EXE}"
         fi
-        ${CONDA_BIN} run $NO_CAPTURE_OUTPUT_FLAG -p "${PREFIX}" \
-          constructor "${INPUT_DIR}"\
+        # Cannot use conda run due to https://github.com/conda/conda-standalone/issues/151
+        . "${PREFIX}/etc/profile.d/conda.sh" && conda activate
+        constructor "${INPUT_DIR}"\
             --output-dir "${ARTIFACTS_DIRECTORY}"\
+            --cache-dir "${CACHE_DIRECTORY}"\
             ${EXTRA_CONSTRUCTOR_ARGS}
+        conda deactivate
         # Remove the constructor-generated tmp directory
         rm -rf "${ARTIFACTS_DIRECTORY}/tmp"
         echo "::endgroup::"
