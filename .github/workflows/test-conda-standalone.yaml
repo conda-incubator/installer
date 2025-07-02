@@ -25,7 +25,7 @@ jobs:
           - os: ubuntu
             target-platform: linux-64
           - os: macos
-            target-plaftorm: osx-arm64
+            target-platform: osx-arm64
           - os: windows
             target-platform: win-64
     name: conda-standalone, ${{ matrix.os }}
@@ -46,6 +46,9 @@ jobs:
           STANDALONE_VERSION: 25.1.1
           TARGET_PLATFORM: ${{ matrix.target-platform }}
         run: |
+          if [[ "$(uname)" == MINGW* ]]; then
+              STANDALONE_DIR=$(cygpath "${STANDALONE_DIR}")
+          fi
           mkdir -p "${STANDALONE_DIR}"
 
           # Find conda-standalone in repositoru
