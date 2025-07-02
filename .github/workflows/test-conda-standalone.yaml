@@ -1,0 +1,134 @@
+name: Test conda-standalone
+
+on:
+  pull_request:
+    paths:
+      - action.yaml
+      - recipes/defaults/*
+      - .github/workflows/test-conda-standalone.yaml
+  push:
+    branches:
+      - main
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  build-installer:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu
+            target-platform: linux-64
+          #- os: macos
+          #  target-plaftorm: osx-arm64
+          #- os: windows
+          #  target-platform: win-64
+    name: conda-standalone, ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}-latest
+    env:
+      CONDA_STANDALONE_VERSION: 25.1.1
+      CONDA_STANDALONE_BUILD: 0
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683       # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Download conda-standalone
+        id: download-conda-standalone
+        env:
+          STANDALONE_DIR: ${{ runner.temp }}/_standalone
+          STANDALONE_VERSION: 25.1.1
+          TARGET_PLATFORM: ${{ matrix.target-platform }}
+        run: |
+          mkdir -p "${STANDALONE_DIR}"
+
+          # Find conda-standalone in repositoru
+          filepath=$(curl -s https://api.anaconda.org/package/main/conda-standalone/files \
+            | jq -r "map(select(.version==\"${STANDALONE_VERSION}\" and .attrs.subdir == \"${TARGET_PLATFORM}\")) | max_by(.attrs.build_number) | .basename" \
+          )
+           if [[ "${filepath}" == *.conda ]]; then
+              STANDALONE_ARCHIVE="${STANDALONE_DIR}/standalone.conda"
+          elif [[ "${filepath}" == *.tar.bz2 ]]; then
+              STANDALONE_ARCHIVE="${STANDALONE_DIR}/standalone.tar.bz2"
+          else
+              echo "Unregonized file format for ${filepath}"
+              exit 1
+          fi
+          curl -sL "https://conda.anaconda.org/main/${filepath}" -o "${STANDALONE_ARCHIVE}"
+
+          # Unpack and find the executable
+          tar -xf "${STANDALONE_ARCHIVE}" -C "${STANDALONE_DIR}"
+          if [[ "${STANDALONE_ARCHIVE}" == *.conda ]]; then
+              for tarfile in $(find "${STANDALONE_DIR}" -name "*.tar.zst"); do
+                  tar -xf "${tarfile}" -C "${STANDALONE_DIR}"
+              done
+          fi
+          STANDALONE_EXE=$(find "${STANDALONE_DIR}" -name "conda.exe")
+          echo "standalone-path=${STANDALONE_EXE}" >> ${GITHUB_OUTPUT}
+        shell: bash
+
+      - name: Create installer
+        id: create-installer
+        uses: ./
+        with:
+          environment-yaml-file: recipes/defaults/environment.yaml
+          input-directory: recipes/defaults
+          standalone-location: ${{ steps.download-conda-standalone.outputs.standalone-path }}
+
+      #- name: Upload installer to Github artifact
+      #  uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02       # v4.6.2
+      #  with:
+      #    path: ${{ steps.create-installer.outputs.artifacts-directory }}/*
+      #    name: test-conda-standalone-${{ matrix.os }}
+      #    retention-days: 5
+
+      - name: Determine installer file name
+        id: installer-file
+        env:
+          ARTIFACTS_DIRECTORY: ${{ steps.create-installer.outputs.artifacts-directory }}
+        run: |
+          INSTALLER_FILE=$(find "${ARTIFACTS_DIRECTORY}" -name "*.sh" | head -n 1)
+          echo "installer-file=${INSTALLER_FILE}" >> ${GITHUB_OUTPUT}
+        shell: bash
+
+      - name: Verify hashes
+        env:
+          ARTIFACTS_DIRECTORY: ${{ steps.create-installer.outputs.artifacts-directory }}
+          INSTALLER_FILE: ${{ steps.installer-file.outputs.installer-file }}
+        run: |
+          UNAME=$(uname)
+          [[ "${UNAME}" == "Darwin" ]] && SHACMD="shasum -a 256" || SHACMD=sha256sum
+          cd ${ARTIFACTS_DIRECTORY}
+          ${SHACMD} -c "${INSTALLER_FILE}.sha256"
+        shell: bash
+
+      - name: Run installer
+        uses: conda-incubator/setup-miniconda@505e6394dae86d6a5c7fbb6e3fb8938e3e863830       # v3.1.1
+        with:
+          activate-environment: ''
+          installation-dir: ${{ runner.temp }}/installer_test
+          installer-url: file://${{ steps.installer-file.outputs.installer-file }}
+
+      - name: Test installer
+        env:
+          INSTALL_DIR: ${{ runner.temp }}/installer_test
+        run: |
+          if [[ $(uname) == MINGW* ]]; then
+              CONDA=$(cygpath "${CONDA}")
+          fi
+          . ${CONDA}/etc/profile.d/conda.sh
+          conda activate
+          conda info --json | python -c "import json, os, sys; from pathlib import Path; info = json.loads(sys.stdin.read()); assert Path(os.environ.get('INSTALL_DIR', '')).samefile(info['root_prefix'])"
+          if [[ $(uname) == MINGW* ]]; then
+              test -f "${CONDA}/install.log"
+              test "$(${CONDA}/_conda.exe --version | cut -d' ' -f2)" == "${CONDA_STANDALONE_VERSION}"
+          else
+              test "$(${CONDA}/_conda --version | cut -d' ' -f2)" == "${CONDA_STANDALONE_VERSION}"
+          fi
+        shell: bash
