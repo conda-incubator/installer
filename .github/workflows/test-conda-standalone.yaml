@@ -81,7 +81,16 @@ jobs:
         uses: ./
         with:
           environment-yaml-file: recipes/defaults/environment.yaml
-          input-directory: recipes/defaults
+          environment-yaml-string: |
+            channels:
+              - defaults
+            dependencies:
+              - constructor
+              ${{ matrix.os == 'windows' && '- nsis=*=*_log_*' || '' }}
+            variables:
+              ${{ matrix.os == 'macos' && 'CONDA_OVERRIDE_OSX: 12.0' || '' }}
+              EXT: ${{ matrix.os == 'windows' && 'exe' || 'sh' }}
+              NSIS_USING_LOG_BUILD: 1
           standalone-location: ${{ steps.download-conda-standalone.outputs.standalone-path }}
 
       - name: Upload installer to Github artifact
