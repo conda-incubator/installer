@@ -105,8 +105,8 @@ jobs:
         env:
           ARTIFACTS_DIRECTORY: ${{ steps.create-installer.outputs.artifacts-directory }}
         run: |
-          INSTALLER_FILE=$(find "${ARTIFACTS_DIRECTORY}" -name "*.sh" | head -n 1)
-          echo "installer-file=${INSTALLER_FILE}" >> ${GITHUB_OUTPUT}
+          SHAFILE=$(find "${ARTIFACTS_DIRECTORY}" -name "*.sha256" | head -n 1)
+          echo "installer-file=${SHAFILE/\.sha256/}" >> ${GITHUB_OUTPUT}
         shell: bash
 
       - name: Verify hashes
