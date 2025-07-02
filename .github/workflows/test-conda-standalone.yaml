@@ -115,6 +115,7 @@ jobs:
           INSTALLER_FILE: ${{ steps.installer-file.outputs.installer-file }}
         run: |
           UNAME=$(uname)
+          [[ "${UNAME}" == MINGW* ]] && ARTIFACTS_DIRECTORY=$(cygpath "${ARTIFACTS_DIRECTORY}")
           [[ "${UNAME}" == "Darwin" ]] && SHACMD="shasum -a 256" || SHACMD=sha256sum
           cd ${ARTIFACTS_DIRECTORY}
           ${SHACMD} -c "${INSTALLER_FILE}.sha256"
