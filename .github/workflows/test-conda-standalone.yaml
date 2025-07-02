@@ -119,13 +119,14 @@ jobs:
         env:
           INSTALL_DIR: ${{ runner.temp }}/installer_test
         run: |
-          if [[ $(uname) == MINGW* ]]; then
+          UNAME="$(uname)"
+          if [[ "${UNAME}" == MINGW* ]]; then
               CONDA=$(cygpath "${CONDA}")
           fi
           . ${CONDA}/etc/profile.d/conda.sh
           conda activate
           conda info --json | python -c "import json, os, sys; from pathlib import Path; info = json.loads(sys.stdin.read()); assert Path(os.environ.get('INSTALL_DIR', '')).samefile(info['root_prefix'])"
-          if [[ $(uname) == MINGW* ]]; then
+          if [[ "${UNAME}" == MINGW* ]]; then
               test -f "${CONDA}/install.log"
               test "$(${CONDA}/_conda.exe --version | cut -d' ' -f2)" == "${CONDA_STANDALONE_VERSION}"
           else
