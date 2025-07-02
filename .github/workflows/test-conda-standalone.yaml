@@ -24,10 +24,10 @@ jobs:
         include:
           - os: ubuntu
             target-platform: linux-64
-          #- os: macos
-          #  target-plaftorm: osx-arm64
-          #- os: windows
-          #  target-platform: win-64
+          - os: macos
+            target-plaftorm: osx-arm64
+          - os: windows
+            target-platform: win-64
     name: conda-standalone, ${{ matrix.os }}
     runs-on: ${{ matrix.os }}-latest
     env:
@@ -81,12 +81,12 @@ jobs:
           input-directory: recipes/defaults
           standalone-location: ${{ steps.download-conda-standalone.outputs.standalone-path }}
 
-      #- name: Upload installer to Github artifact
-      #  uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02       # v4.6.2
-      #  with:
-      #    path: ${{ steps.create-installer.outputs.artifacts-directory }}/*
-      #    name: test-conda-standalone-${{ matrix.os }}
-      #    retention-days: 5
+      - name: Upload installer to Github artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02       # v4.6.2
+        with:
+          path: ${{ steps.create-installer.outputs.artifacts-directory }}/*
+          name: test-conda-standalone-${{ matrix.os }}
+          retention-days: 5
 
       - name: Determine installer file name
         id: installer-file
