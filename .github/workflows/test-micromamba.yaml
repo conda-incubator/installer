@@ -34,7 +34,7 @@ jobs:
           persist-credentials: false
 
       - name: Download micromamba
-        uses: mamba-org/setup-micromamba@0dea6379afdaffa5d528b3d1dabc45da37f443fc  # v2.0.4
+        uses: mamba-org/setup-micromamba@add3a49764cedee8ee24e82dfde87f5bc2914462  # v2.0.7
         with:
           init-shell: none
           micromamba-version: ${{ env.MICROMAMBA_VERSION }}-${{ env.MICROMAMBA_BUILD }}
