@@ -27,7 +27,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Miniconda
-        uses: conda-incubator/setup-miniconda@d2e6a045a86077fb6cad6f5adf368e9076ddaa8d       # v3.1.0
+        uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167       # v3.3.0
         with:
           activate-environment: ''
           run-post: false
