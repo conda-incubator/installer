@@ -72,6 +72,7 @@ runs:
         INPUT_DIRECTORY: ${{ inputs.input-directory }}
         STANDALONE_LOCATION: ${{ inputs.standalone-location }}
       run: |
+        # Validate input
         if [[ -n "${CONDA_ROOT}" ]] && [[ ! -d "${CONDA_ROOT}" ]]; then
             echo "::error::Directory ${CONDA_ROOT} does not exist."
             exit 1
@@ -95,6 +96,7 @@ runs:
       env:
         CONTAINER_IMAGE: ${{ inputs.container-image }}
       run: |
+        # Set up workspace
         UNAME="$(uname)"
         CONSTRUCTOR_WORKSPACE="${RUNNER_TEMP}/_constructor_workdir"
         if [[ "${UNAME}" == MINGW* ]]; then
@@ -125,6 +127,7 @@ runs:
         ENVIRONMENT_FILE: ${{ steps.workspace.outputs.constructor-workspace }}/environment.yaml
         ENVIRONMENT_YAML_STRING: ${{ inputs.environment-yaml-string }}
       run: |
+        # Create environment.yaml file
         echo "${ENVIRONMENT_YAML_STRING}" > "${ENVIRONMENT_FILE}"
         echo "environment-yaml-file=${ENVIRONMENT_FILE}" >> ${GITHUB_OUTPUT}
       shell: bash
@@ -145,6 +148,7 @@ runs:
         CONTAINER_IMAGE: ${{ inputs.container-image }}
         STANDALONE_LOCATION: ${{ inputs.standalone-location }}
       run: |
+        # Create container command
         if [[ -n "${STANDALONE_LOCATION}" ]]; then
             STANDALONE_MOUNT_ARG="-v $(dirname "${STANDALONE_LOCATION}"):$(dirname "${STANDALONE_LOCATION}")"
         fi
@@ -182,6 +186,7 @@ runs:
         AZURE_SIGNTOOL_KEY_VAULT_URL: ${{ inputs.azure-signtool-key-vault-url }}
         CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD: ${{ inputs.constructor-pfx-certificate_password }}
       run: |
+        # Build installer
         echo "::group::Create environment"
         # Define variables here instead of in an environment to simplify Docker command
         CONSTRUCTOR_WORKSPACE="${{ steps.workspace.outputs.constructor-workspace }}"
