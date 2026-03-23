@@ -133,7 +133,7 @@ runs:
       if: ${{ inputs.container-image && inputs.container-arch }}
       uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a     # v4.0.0
       with:
-        image: tonistiigi/binfmt:qemu-v9.2.2@sha256:1b804311fe87047a4c96d38b4b3ef6f62fca8cd125265917a9e3dc3c996c39e6
+        image: tonistiigi/binfmt:qemu-v10.2.1@sha256:d3b963f787999e6c0219a48dba02978769286ff61a5f4d26245cb6a6e5567ea3
         platforms: ${{ inputs.container-arch }}
 
     - name: Create container command
