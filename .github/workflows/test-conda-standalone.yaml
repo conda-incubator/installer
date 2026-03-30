@@ -30,6 +30,8 @@ jobs:
             target-platform: win-64
     name: conda-standalone, ${{ matrix.os }}
     runs-on: ${{ matrix.os }}-latest
+    env:
+      CONDA_STANDALONE_VERSION: 26.1.1
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd       # v6.0.2
@@ -41,6 +43,7 @@ jobs:
         uses: conda-incubator/setup-conda-standalone@00a34805e93a8b640aee5f8a20e8f481ad77e3b4  # v0.1.0
         with:
           channel: main
+          conda-standalone-version: ${{ env.CONDA_STANDALONE_VERSION }}
           destination-directory: ${{ runner.temp }}/conda_standalone
           set-env: false
 
