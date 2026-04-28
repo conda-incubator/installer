@@ -31,8 +31,7 @@ jobs:
     name: conda-standalone, ${{ matrix.os }}
     runs-on: ${{ matrix.os }}-latest
     env:
-      CONDA_STANDALONE_VERSION: 25.1.1
-      CONDA_STANDALONE_BUILD: 0
+      CONDA_STANDALONE_VERSION: 26.1.1
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd       # v6.0.2
@@ -41,40 +40,12 @@ jobs:
 
       - name: Download conda-standalone
         id: download-conda-standalone
-        env:
-          STANDALONE_DIR: ${{ runner.temp }}/_standalone
-          STANDALONE_VERSION: 25.1.1
-          TARGET_PLATFORM: ${{ matrix.target-platform }}
-        run: |
-          if [[ "$(uname)" == MINGW* ]]; then
-              STANDALONE_DIR=$(cygpath "${STANDALONE_DIR}")
-          fi
-          mkdir -p "${STANDALONE_DIR}"
-
-          # Find conda-standalone in repositoru
-          filepath=$(curl -s https://api.anaconda.org/package/main/conda-standalone/files \
-            | jq -r "map(select(.version==\"${STANDALONE_VERSION}\" and .attrs.subdir == \"${TARGET_PLATFORM}\")) | max_by(.attrs.build_number) | .basename" \
-          )
-           if [[ "${filepath}" == *.conda ]]; then
-              STANDALONE_ARCHIVE="${STANDALONE_DIR}/standalone.conda"
-          elif [[ "${filepath}" == *.tar.bz2 ]]; then
-              STANDALONE_ARCHIVE="${STANDALONE_DIR}/standalone.tar.bz2"
-          else
-              echo "Unregonized file format for ${filepath}"
-              exit 1
-          fi
-          curl -sL "https://conda.anaconda.org/main/${filepath}" -o "${STANDALONE_ARCHIVE}"
-
-          # Unpack and find the executable
-          tar -xf "${STANDALONE_ARCHIVE}" -C "${STANDALONE_DIR}"
-          if [[ "${STANDALONE_ARCHIVE}" == *.conda ]]; then
-              for tarfile in $(find "${STANDALONE_DIR}" -name "*.tar.zst"); do
-                  tar -xf "${tarfile}" -C "${STANDALONE_DIR}"
-              done
-          fi
-          STANDALONE_EXE=$(find "${STANDALONE_DIR}" -name "conda.exe")
-          echo "standalone-path=${STANDALONE_EXE}" >> ${GITHUB_OUTPUT}
-        shell: bash
+        uses: conda-incubator/setup-conda-standalone@00a34805e93a8b640aee5f8a20e8f481ad77e3b4  # v0.1.0
+        with:
+          channel: main
+          conda-standalone-version: ${{ env.CONDA_STANDALONE_VERSION }}
+          destination-directory: ${{ runner.temp }}/conda_standalone
+          set-env: false
 
       - name: Create installer
         id: create-installer
@@ -91,7 +62,7 @@ jobs:
               EXT: ${{ matrix.os == 'windows' && 'exe' || 'sh' }}
               NSIS_USING_LOG_BUILD: 1
           input-directory: recipes/defaults
-          standalone-location: ${{ steps.download-conda-standalone.outputs.standalone-path }}
+          standalone-location: ${{ steps.download-conda-standalone.outputs.conda-standalone-path }}
 
       - name: Upload installer to Github artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a       # v7.0.1
