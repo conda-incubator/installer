@@ -124,7 +124,7 @@ jobs:
           persist-credentials: false
 
       - name: Download micromamba
-        uses: mamba-org/setup-micromamba@add3a49764cedee8ee24e82dfde87f5bc2914462  # v2.0.7
+        uses: mamba-org/setup-micromamba@ce51e99f4bb8a82ab7158c4dc59ef4634c59c4f9  # v3.1.0
         with:
           init-shell: none
 
