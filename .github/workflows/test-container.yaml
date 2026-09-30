@@ -39,7 +39,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd       # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1       # v7.0.1
         with:
           persist-credentials: false
 
@@ -71,14 +71,14 @@ jobs:
             dependencies:
               - constructor
             variables:
-              ${{ startswith(matrix.container-image, 'condaforge/') && 'CONDA_OVERRIDE_GLIBC: 2.17' || '' }}
+              ${{ startswith(matrix.container-image, 'condaforge/') && 'CONDA_OVERRIDE_GLIBC: 2.17' || 'INSTALLER_TEST: 1' }}
           container-arch: ${{ matrix.container-architecture }}
           container-image: ${{ matrix.container-image }}
           standalone-location: ${{ steps.download-micromamba.outputs.micromamba-path }}
           input-directory: ${{ startswith(matrix.container-image, 'condaforge/') && 'recipes/micromamba' || 'recipes/defaults' }}
 
       - name: Upload installer to Github artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f       # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a       # v7.0.1
         with:
           path: ${{ steps.create-installer.outputs.artifacts-directory }}/*
           name: container-test-${{ matrix.artifact-suffix }}

@@ -29,12 +29,12 @@ jobs:
       MICROMAMBA_BUILD: 0
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd       # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1       # v7.0.1
         with:
           persist-credentials: false
 
       - name: Download micromamba
-        uses: mamba-org/setup-micromamba@add3a49764cedee8ee24e82dfde87f5bc2914462  # v2.0.7
+        uses: mamba-org/setup-micromamba@f457c30a868e4760d3a6fcea5f25dc655b8edf39  # v3.2.1
         with:
           init-shell: none
           micromamba-version: ${{ env.MICROMAMBA_VERSION }}-${{ env.MICROMAMBA_BUILD }}
@@ -55,7 +55,7 @@ jobs:
           input-directory: recipes/micromamba
 
       - name: Upload installer to Github artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f       # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a       # v7.0.1
         with:
           path: ${{ steps.create-installer.outputs.artifacts-directory }}/*
           name: test-micromamba-${{ matrix.os }}
@@ -82,7 +82,7 @@ jobs:
         shell: bash
 
       - name: Run installer
-        uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167       # v3.3.0
+        uses: conda-incubator/setup-miniconda@be893c923ea9cf1cf7cd510fbdde27c7e18cbdcb       # v4.1.0
         with:
           activate-environment: ''
           installation-dir: ${{ runner.temp }}/installer_test
