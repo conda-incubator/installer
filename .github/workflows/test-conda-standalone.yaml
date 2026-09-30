@@ -51,26 +51,33 @@ jobs:
           fi
           mkdir -p "${STANDALONE_DIR}"
 
-          # Find conda-standalone in repositoru
+          # Find conda-standalone in repository
           filepath=$(curl -s https://api.anaconda.org/package/main/conda-standalone/files \
             | jq -r "map(select(.version==\"${STANDALONE_VERSION}\" and .attrs.subdir == \"${TARGET_PLATFORM}\")) | max_by(.attrs.build_number) | .basename" \
           )
-           if [[ "${filepath}" == *.conda ]]; then
-              STANDALONE_ARCHIVE="${STANDALONE_DIR}/standalone.conda"
+          if [[ "${filepath}" == *.conda ]]; then
+              STANDALONE_ARCHIVE="${STANDALONE_DIR}/${filepath##*/}"
           elif [[ "${filepath}" == *.tar.bz2 ]]; then
-              STANDALONE_ARCHIVE="${STANDALONE_DIR}/standalone.tar.bz2"
+              STANDALONE_ARCHIVE="${STANDALONE_DIR}/${filepath##*/}"
           else
-              echo "Unregonized file format for ${filepath}"
+              echo "Unrecognized file format for ${filepath}"
               exit 1
           fi
           curl -sL "https://conda.anaconda.org/main/${filepath}" -o "${STANDALONE_ARCHIVE}"
 
-          # Unpack and find the executable
-          tar -xf "${STANDALONE_ARCHIVE}" -C "${STANDALONE_DIR}"
+          # Unpack and find the executable. Newer artifacts are only
+          # published as .conda, a zip container of .tar.zst members that
+          # GNU tar on ubuntu/windows runners cannot read. Unzip the
+          # container with unzip (available on all runner images) and
+          # extract the inner .tar.zst members with tar as before.
+          # .tar.bz2 artifacts are extracted by tar directly.
           if [[ "${STANDALONE_ARCHIVE}" == *.conda ]]; then
-              for tarfile in $(find "${STANDALONE_DIR}" -name "*.tar.zst"); do
+              unzip -q -o "${STANDALONE_ARCHIVE}" -d "${STANDALONE_DIR}"
+              for tarfile in "${STANDALONE_DIR}"/*.tar.zst; do
                   tar -xf "${tarfile}" -C "${STANDALONE_DIR}"
               done
+          else
+              tar -xf "${STANDALONE_ARCHIVE}" -C "${STANDALONE_DIR}"
           fi
           STANDALONE_EXE=$(find "${STANDALONE_DIR}" -name "conda.exe")
           echo "standalone-path=${STANDALONE_EXE}" >> ${GITHUB_OUTPUT}
