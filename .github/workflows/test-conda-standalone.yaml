@@ -23,8 +23,11 @@ jobs:
       matrix:
         include:
           - os: ubuntu
+            target-platform: linux-64
           - os: macos
+            target-platform: osx-arm64
           - os: windows
+            target-platform: win-64
     name: conda-standalone, ${{ matrix.os }}
     runs-on: ${{ matrix.os }}-latest
     env:
@@ -42,6 +45,7 @@ jobs:
           channel: main
           conda-standalone-version: ${{ env.CONDA_STANDALONE_VERSION }}
           destination-directory: ${{ runner.temp }}/conda_standalone
+          platform: ${{ matrix.target-platform }}
           set-env: false
 
       - name: Create installer
