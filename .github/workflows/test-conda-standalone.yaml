@@ -40,7 +40,7 @@ jobs:
 
       - name: Download conda-standalone
         id: download-conda-standalone
-        uses: conda-incubator/setup-conda-standalone@00a34805e93a8b640aee5f8a20e8f481ad77e3b4  # v0.1.0
+        uses: conda-incubator/setup-conda-standalone@81e6787412ec26080799a19e61bec407502021ed  # v0.1.1
         with:
           channel: main
           conda-standalone-version: ${{ env.CONDA_STANDALONE_VERSION }}
